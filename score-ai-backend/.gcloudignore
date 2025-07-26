@@ -1,0 +1,44 @@
+# This file specifies files that are intentionally untracked by gcloud
+# If you would like to upload your .git directory, .gitignore file or files
+# from your .gitignore file, remove the corresponding line below
+
+.git
+.gitignore
+
+# Python pycache:
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtualenv:
+venv/
+.venv/
+env/
+.env/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Local environment files
+.env
+.env.local
+.env.yaml
+
+# Testing files
+tests/
+test/ 
