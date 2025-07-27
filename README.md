@@ -11,11 +11,9 @@ This repo contains the solution to the Growtrics take-home assignment: a **Flutt
 ├── behavioural_questions.md        # Answers to behavioural questions
 ├── README.md                       # You are here
 ```
-
-> Detailed technical roadmaps are documented in:
->
-> • `score-ai-backend/README.md`
-> • `score-ai-app/README.md`
+Detailed technical roadmaps are documented in:
+- `score-ai-backend/README.md`
+- `score-ai-app/README.md`
 
 ## Quick Start
 
