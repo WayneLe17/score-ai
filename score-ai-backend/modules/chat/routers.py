@@ -9,6 +9,46 @@ chat_bp = Blueprint("chat", __name__, url_prefix="/chat")
 @chat_bp.route("/<job_id>/explain", methods=["POST"])
 @login_required
 def explain_question(job_id: str):
+    """
+    Explain a question based on the job's context.
+    ---
+    tags:
+      - Chat
+    security:
+      - bearerAuth: []
+    parameters:
+      - in: path
+        name: job_id
+        type: string
+        required: true
+        description: The ID of the job to which the question pertains.
+      - in: body
+        name: body
+        schema:
+          type: object
+          required:
+            - question
+          properties:
+            question:
+              type: string
+              description: The question to be explained.
+            chat_history:
+              type: array
+              items:
+                type: object
+              description: A list of previous chat messages to provide context.
+    responses:
+      200:
+        description: A stream of the AI's explanation.
+        schema:
+          type: string
+      400:
+        description: Bad Request, e.g., question is missing.
+      403:
+        description: Unauthorized to access this job.
+      404:
+        description: Job not found.
+    """
     user_id = g.user["uid"]
     job_result = firestore_service.get_job(job_id)
     if not job_result.success:
