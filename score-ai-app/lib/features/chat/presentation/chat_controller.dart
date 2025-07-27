@@ -10,12 +10,12 @@ class ChatController {
 
   ChatController(this._chatRepository);
 
-  Stream<String> getExplanationStream({
+  Future<String> getExplanation({
     required String jobId,
     required Map<String, dynamic> question,
     required List<Map<String, dynamic>> chatHistory,
   }) {
-    return _chatRepository.getExplanationStream(
+    return _chatRepository.getExplanation(
       jobId: jobId,
       question: question,
       chatHistory: chatHistory,

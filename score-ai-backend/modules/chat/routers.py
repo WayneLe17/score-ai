@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, g, Response, stream_with_context
+from flask import Blueprint, request, jsonify, g, Response
 from core.security import login_required
 from . import chat_service
 from core.firestore import firestore_service
@@ -39,9 +39,12 @@ def explain_question(job_id: str):
               description: A list of previous chat messages to provide context.
     responses:
       200:
-        description: A stream of the AI's explanation.
+        description: The AI's explanation.
         schema:
-          type: string
+          type: object
+          properties:
+            explanation:
+              type: string
       400:
         description: Bad Request, e.g., question is missing.
       403:
@@ -64,11 +67,11 @@ def explain_question(job_id: str):
     if not question:
         return jsonify({"message": "Question is required"}), 400
 
-    return Response(
-        stream_with_context(
-            chat_service.get_ai_explanation_stream(
-                question=question, chat_history=chat_history
-            )
-        ),
-        content_type="text/event-stream",
-    ) 
+    result = chat_service.get_ai_explanation(
+        question=question, chat_history=chat_history
+    )
+    
+    if result.success:
+        return jsonify(result.data), result.status_code
+    else:
+        return jsonify({"message": result.message}), result.status_code 

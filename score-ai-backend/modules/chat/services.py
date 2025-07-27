@@ -1,6 +1,7 @@
 import logging
 from google import genai
 from config import settings
+from core.schemas import ServiceResult
 
 
 class ChatService:
@@ -12,11 +13,10 @@ class ChatService:
             logging.error(f"Error initializing ChatService: {e}")
             self.client = None
 
-    def get_ai_explanation_stream(self, question: dict, chat_history: list):
+    def get_ai_explanation(self, question: dict, chat_history: list) -> ServiceResult:
         if not self.client:
             logging.error("Chat client not initialized.")
-            yield "Error: Chat client is not initialized. Please check the server logs."
-            return
+            return ServiceResult.failure_result("Error: Chat client is not initialized. Please check the server logs.", 500)
 
         try:
             initial_context = self.build_context(question)
@@ -41,14 +41,9 @@ class ChatService:
                     if not isinstance(content, str):
                         content = str(content)
                     
-                    response = chat.send_message_stream(content)
-                    for chunk in response:
-                        if hasattr(chunk, 'text') and chunk.text:
-                            yield chunk.text
-                        elif hasattr(chunk, 'parts') and chunk.parts:
-                            for part in chunk.parts:
-                                if hasattr(part, 'text') and part.text:
-                                    yield part.text
+                    response = chat.send_message(content)
+                    return ServiceResult.success_result(data={"explanation": response.text})
+
             else:
                 if chat_history:
                     content = chat_history[-1].get("content", "")
@@ -58,22 +53,16 @@ class ChatService:
                 else:
                     content = initial_context
                 
-                response_stream = self.client.models.generate_content_stream(
+                response = self.client.models.generate_content(
                     model=self.model_name,
                     contents=[content]
                 )
                 
-                for chunk in response_stream:
-                    if hasattr(chunk, 'text') and chunk.text:
-                        yield chunk.text
-                    elif hasattr(chunk, 'parts') and chunk.parts:
-                        for part in chunk.parts:
-                            if hasattr(part, 'text') and part.text:
-                                yield part.text
+                return ServiceResult.success_result(data={"explanation": response.text})
 
         except Exception as e:
-            logging.error(f"Error getting AI explanation stream: {e}")
-            yield f"Error: Failed to get AI explanation. {e}"
+            logging.error(f"Error getting AI explanation: {e}")
+            return ServiceResult.failure_result(f"Error: Failed to get AI explanation. {e}", 500)
 
     def build_context(self, question: dict) -> str:
         question_text = question.get("question", "")

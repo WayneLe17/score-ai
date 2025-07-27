@@ -40,46 +40,36 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     setState(() {}); // Update UI when text changes
   }
 
-  void _sendMessage() {
+  void _sendMessage() async {
     if (_textController.text.isEmpty) return;
 
     final message = {
       'role': 'user',
       'content': _textController.text,
     };
+
     setState(() {
       _chatHistory.add(message);
       _isLoading = true;
-      streamedContent = ''; // Reset streamed content for new message
     });
+    _textController.clear();
 
-    final responseStream =
-        ref.read(chatControllerProvider).getExplanationStream(
-              jobId: widget.jobId,
-              question: widget.question,
-              chatHistory: _chatHistory,
-            );
-
-    // Streaming implementation as requested
-    responseStream.listen((response) {
+    try {
+      final response = await ref.read(chatControllerProvider).getExplanation(
+            jobId: widget.jobId,
+            question: widget.question,
+            chatHistory: _chatHistory,
+          );
       setState(() {
-        streamedContent += response; // Append each chunk to the string
-      });
-    }, onDone: () {
-      setState(() {
-        _chatHistory.add({'role': 'model', 'content': streamedContent});
+        _chatHistory.add({'role': 'model', 'content': response});
         _isLoading = false;
-        streamedContent = ''; // Clear after adding to history
       });
-    }, onError: (error) {
+    } catch (error) {
       setState(() {
         _chatHistory.add({'role': 'model', 'content': 'Error: $error'});
         _isLoading = false;
-        streamedContent = '';
       });
-    });
-
-    _textController.clear();
+    }
   }
 
   Widget _buildMarkdownContent(String content, {Color? textColor}) {
@@ -124,30 +114,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ),
           Expanded(
             child: ListView.builder(
-              reverse: true,
-              itemCount: _chatHistory.length + (_isLoading ? 1 : 0),
+              reverse: false,
+              itemCount: _chatHistory.length,
               itemBuilder: (context, index) {
-                // Show streaming content while loading
-                if (_isLoading && index == 0) {
-                  return Align(
-                    alignment: Alignment.centerLeft,
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(vertical: 4),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: colorScheme.secondary.withAlpha(26),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: _buildMarkdownContent(
-                        streamedContent,
-                        textColor: colorScheme.onSurface,
-                      ),
-                    ),
-                  );
-                }
-
-                final message = _chatHistory.reversed
-                    .toList()[index - (_isLoading ? 1 : 0)];
+                final message = _chatHistory[index];
                 final isUser = message['role'] == 'user';
                 return Align(
                   alignment:
@@ -175,6 +145,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               },
             ),
           ),
+          if (_isLoading)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8.0),
+              child: CircularProgressIndicator(),
+            ),
           // Input area with keyboard-aware padding
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
@@ -247,9 +222,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     margin: const EdgeInsets.only(bottom: 2),
                     child: IconButton(
                       icon: const Icon(Icons.send),
-                      onPressed: (_isLoading || _textController.text.trim().isEmpty)
-                          ? null
-                          : _sendMessage,
+                      onPressed:
+                          (_isLoading || _textController.text.trim().isEmpty)
+                              ? null
+                              : _sendMessage,
                     ),
                   ),
                 ],
