@@ -42,9 +42,10 @@ flutter run
 ```
 
 ## Demo
-FE: https://score-ai-65bd7.web.app/
-BE: https://api-hprsya2ljq-uc.a.run.app
-Mobile (Demo): 
+- FE: https://score-ai-65bd7.web.app/
+- BE: https://api-hprsya2ljq-uc.a.run.app
+- Mobile (Demo): https://drive.google.com/file/d/1AEvuY466ugtzx1HPCEd9nNLV0hNJ6Fi5/view?usp=sharing
+
 ## Features
 
 ### User Authentication
