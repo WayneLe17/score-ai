@@ -1,51 +1,76 @@
 import logging
-from google import generativeai as genai
+from google import genai
 from config import settings
 
 
 class ChatService:
     def __init__(self):
         try:
-            genai.configure(api_key=settings.GEMINI_API_KEY)
-            self.model = genai.GenerativeModel(model_name=settings.GEMINI_MODEL_NAME)
+            self.client = genai.Client()
+            self.model_name = settings.GEMINI_MODEL_NAME
         except Exception as e:
             logging.error(f"Error initializing ChatService: {e}")
-            self.model = None
+            self.client = None
 
     def get_ai_explanation_stream(self, question: dict, chat_history: list):
-        if not self.model:
-            logging.error("Chat model not initialized.")
-            yield "Error: Chat model is not initialized. Please check the server logs."
+        if not self.client:
+            logging.error("Chat client not initialized.")
+            yield "Error: Chat client is not initialized. Please check the server logs."
             return
 
         try:
-            gemini_history = []
-            for message in chat_history:
-                role = "user" if message["role"] == "user" else "model"
-                content = message.get("content", "")
-                if not isinstance(content, str):
-                    content = str(content)
-                gemini_history.append({"role": role, "parts": [{"text": content}]})
+            initial_context = self.build_context(question)
+            
+            if chat_history and len(chat_history) > 1:
+                chat = self.client.chats.create(model=self.model_name)
+                
+                for i, message in enumerate(chat_history[:-1]):
+                    content = message.get("content", "")
+                    if not isinstance(content, str):
+                        content = str(content)
+                    
+                    if i == 0 and message["role"] == "user":
+                        content = f"{initial_context}\n\nHere is my question:\n{content}"
+                    
+                    if message["role"] == "user":
+                        chat.send_message(content)
+                
+                last_message = chat_history[-1]
+                if last_message["role"] == "user":
+                    content = last_message.get("content", "")
+                    if not isinstance(content, str):
+                        content = str(content)
+                    
+                    response = chat.send_message_stream(content)
+                    for chunk in response:
+                        if hasattr(chunk, 'text') and chunk.text:
+                            yield chunk.text
+                        elif hasattr(chunk, 'parts') and chunk.parts:
+                            for part in chunk.parts:
+                                if hasattr(part, 'text') and part.text:
+                                    yield part.text
+            else:
+                if chat_history:
+                    content = chat_history[-1].get("content", "")
+                    if not isinstance(content, str):
+                        content = str(content)
+                    content = f"{initial_context}\n\nHere is my question:\n{content}"
+                else:
+                    content = initial_context
+                
+                response_stream = self.client.models.generate_content_stream(
+                    model=self.model_name,
+                    contents=[content]
+                )
+                
+                for chunk in response_stream:
+                    if hasattr(chunk, 'text') and chunk.text:
+                        yield chunk.text
+                    elif hasattr(chunk, 'parts') and chunk.parts:
+                        for part in chunk.parts:
+                            if hasattr(part, 'text') and part.text:
+                                yield part.text
 
-            if gemini_history:
-                for i in range(len(gemini_history) - 1, -1, -1):
-                    if gemini_history[i]["role"] == "user":
-                        initial_context = self.build_context(question)
-                        user_message = gemini_history[i]["parts"][0]["text"]
-                        gemini_history[i]["parts"][0][
-                            "text"
-                        ] = f"{initial_context}\n\nHere is my question:\n{user_message}"
-                        break
-
-            logging.info(f"Sending content to Gemini: {gemini_history}")
-
-            response_stream = self.model.generate_content(
-                contents=gemini_history, stream=True
-            )
-
-            for chunk in response_stream:
-                if chunk.text:
-                    yield chunk.text
         except Exception as e:
             logging.error(f"Error getting AI explanation stream: {e}")
             yield f"Error: Failed to get AI explanation. {e}"

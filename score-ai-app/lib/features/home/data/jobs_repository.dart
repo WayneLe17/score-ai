@@ -5,9 +5,11 @@ import 'package:http_parser/http_parser.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:score_ai_app/core/api/dio_client.dart';
+
 final jobsRepositoryProvider = Provider<JobsRepository>((ref) {
   return JobsRepository(ref.watch(dioProvider));
 });
+
 class JobsRepository {
   final Dio _dio;
   JobsRepository(this._dio);
@@ -72,6 +74,7 @@ class JobsRepository {
       rethrow;
     }
   }
+
   Future<Map<String, dynamic>> deleteAllJobs() async {
     try {
       final response = await _dio.delete('/analysis/jobs');
@@ -81,6 +84,7 @@ class JobsRepository {
       rethrow;
     }
   }
+
   Future<List<Map<String, dynamic>>> getJobs() async {
     try {
       final response = await _dio.get('/analysis/jobs');
