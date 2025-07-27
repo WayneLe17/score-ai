@@ -5,6 +5,8 @@ from flask_cors import CORS
 from modules.health.routers import health_bp
 from modules.auth.routers import auth_bp
 from modules.analysis.routers import analysis_bp
+from modules.chat.routers import chat_bp
+
 dictConfig({
     'version': 1,
     'formatters': {'default': {
@@ -30,4 +32,6 @@ def create_app():
     app.register_blueprint(health_bp, url_prefix='/health')
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(analysis_bp, url_prefix='/analysis')
+    app.register_blueprint(chat_bp, url_prefix='/chat')
+
     return app

@@ -59,8 +59,12 @@ class ProcessingService:
             response = response.parsed
             logging.info(f"Response: {response}")
             legacy_format = [
-                {"question": qa.question, "answer": qa.answer}
+                {
+                    "question": qa.question.replace("<br>", "\n\n").replace("\n", "\n\n").replace("<div>", "").replace("</div>", ""),
+                    "answer": qa.answer.replace("<br>", "\n\n").replace("\n", "\n\n").replace("<div>", "").replace("</div>", ""),
+                }
                 for qa in response.questions_and_answers
+                if qa.is_homework_problem
             ]
             logging.info(
                 f"Successfully processed page with {len(legacy_format)} questions."
@@ -136,6 +140,3 @@ class ProcessingService:
             firestore_service.update_job(
                 job_id, {"status": "failed", "error_message": str(e)}
             )
-
-
-processing_service = ProcessingService()

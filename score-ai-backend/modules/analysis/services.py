@@ -7,7 +7,7 @@ from werkzeug.utils import secure_filename
 from core.storage import storage_service
 from core.firestore import firestore_service
 from core.schemas import ServiceResult
-from modules.processing.services import processing_service
+from modules.processing import processing_service
 def run_processing_in_background(app, job_id, gcs_path):
     with app.app_context():
         logging.info(f"Background task started for job {job_id}.")

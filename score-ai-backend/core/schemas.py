@@ -16,5 +16,6 @@ class ServiceResult:
 class QuestionAnswer(BaseModel):
     question: str
     answer: str
+    is_homework_problem: bool
 class PageProcessingResponse(BaseModel):
     questions_and_answers: List[QuestionAnswer]

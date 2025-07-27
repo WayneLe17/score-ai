@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, g
-from modules.analysis.services import analysis_service
+from . import analysis_service
 from core.security import login_required
 from core.firestore import firestore_service
 
